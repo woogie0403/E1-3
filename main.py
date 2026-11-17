@@ -1,9 +1,11 @@
 """Mini NPU Simulator: MAC 연산 기반 패턴 판별 및 성능 분석 콘솔 애플리케이션."""
 
 import math
-from typing import List, Optional
+import time
+from typing import List, Optional, Tuple
 
 EPSILON = 1e-9
+DEFAULT_BENCHMARK_REPEAT = 10
 
 
 def is_valid_square_matrix(matrix: object, expected_size: Optional[int] = None) -> bool:
@@ -59,6 +61,69 @@ def judge_scores(
     if score_a > score_b:
         return label_a
     return label_b
+
+
+def benchmark_mac(
+    pattern: List[List[float]],
+    flt: List[List[float]],
+    repeat: int = DEFAULT_BENCHMARK_REPEAT,
+) -> Tuple[float, int]:
+    """I/O를 제외한 순수 compute_mac 호출 구간을 repeat회 반복 측정해 (평균 ms, 연산 횟수 N^2)를 반환한다."""
+    if repeat < 1:
+        raise ValueError("반복 측정 횟수는 1 이상이어야 합니다.")
+
+    # 측정 구간 밖에서 사전 검증 및 1회 워밍업을 수행한다.
+    compute_mac(pattern, flt)
+    size = len(pattern)
+    op_count = size * size
+
+    start = time.perf_counter()
+    for _ in range(repeat):
+        compute_mac(pattern, flt)
+    elapsed_ms = (time.perf_counter() - start) * 1000.0
+    avg_ms = elapsed_ms / repeat
+    return avg_ms, op_count
+
+
+def create_benchmark_matrices(size: int) -> Tuple[List[List[float]], List[List[float]]]:
+    """성능 측정을 위해 N×N 십자가 형태의 테스트 패턴과 필터 한 쌍을 생성한다."""
+    if size < 1:
+        raise ValueError("행렬 크기는 1 이상이어야 합니다.")
+
+    mid = size // 2
+    pattern = [
+        [1.0 if (r == mid or c == mid) else 0.0 for c in range(size)]
+        for r in range(size)
+    ]
+    flt = [row[:] for row in pattern]
+    return pattern, flt
+
+
+def measure_sizes(
+    size_pairs: List[Tuple[int, List[List[float]], List[List[float]]]],
+    repeat: int = DEFAULT_BENCHMARK_REPEAT,
+) -> List[Tuple[int, float, int]]:
+    """여러 크기의 (N, 패턴, 필터) 목록에 대해 순수 연산 시간만 측정해 결과 리스트를 반환한다."""
+    results: List[Tuple[int, float, int]] = []
+    for size, pattern, flt in size_pairs:
+        avg_ms, op_count = benchmark_mac(pattern, flt, repeat=repeat)
+        results.append((size, avg_ms, op_count))
+    return results
+
+
+def print_performance_table(
+    results: List[Tuple[int, float, int]],
+    repeat: int = DEFAULT_BENCHMARK_REPEAT,
+) -> None:
+    """크기별 평균 MAC 연산 시간(ms)과 연산 횟수(N^2) 표를 출력한다."""
+    print("#---------------------------------------")
+    print(f"# [3] 성능 분석 (평균/{repeat}회)")
+    print("#---------------------------------------")
+    print(f"{'크기':<8} {'평균 시간(ms)':>13} {'연산 횟수':>10}")
+    print("-" * 37)
+    for size, avg_ms, op_count in results:
+        size_label = f"{size}×{size}"
+        print(f"{size_label:<8} {avg_ms:>13.4f} {op_count:>10}")
 
 
 def select_mode() -> str:
