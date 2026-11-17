@@ -38,6 +38,133 @@ python main.py
 - **`1` (사용자 입력 3x3)**: 3×3 필터 A, B와 3×3 패턴을 한 줄씩(공백 구분) 입력받아 MAC 점수, 평균 연산 시간(10회/ms), 판정(`A`/`B`/`판정 불가`) 및 3×3 성능 표를 출력합니다.
 - **`2` (data.json 분석)**: `data.json`을 로드해 모든 패턴 케이스의 MAC 점수, 판정(`Cross`/`X`/`UNDECIDED`), `PASS`/`FAIL`, 크기별(3×3 포함, 5×5/13×13/25×25) 성능 표, 결과 요약을 출력합니다.
 
+### 실행 결과 예시
+
+<details>
+<summary>모드 1: 사용자 입력 (3×3) 및 오류 재입력 방어 예시</summary>
+
+```text
+=== Mini NPU Simulator ===
+
+[모드 선택]
+1. 사용자 입력 (3x3)
+2. data.json 분석
+선택: 1
+
+#---------------------------------------
+# [1] 필터 입력
+#---------------------------------------
+필터 A (3줄 입력, 공백 구분)
+1 2
+입력 형식 오류: 각 줄에 3개의 숫자를 공백으로 구분해 입력하세요. (1번째 줄 재입력)
+0 1 0
+1 1 1
+0 1 0
+
+필터 B (3줄 입력, 공백 구분)
+1 0 1
+0 1 0
+1 0 1
+
+✓ 필터 A, B (3×3) 저장 확인 완료
+
+#---------------------------------------
+# [2] 패턴 입력
+#---------------------------------------
+패턴 (3줄 입력, 공백 구분)
+1 0 1
+0 1 0
+1 0 1
+
+#---------------------------------------
+# [3] MAC 결과
+#---------------------------------------
+A 점수: 1.0
+B 점수: 5.0
+연산 시간(평균/10회): 0.0055 ms
+판정: B
+
+#---------------------------------------
+# [3] 성능 분석 (평균/10회)
+#---------------------------------------
+크기           평균 시간(ms)     연산 횟수
+-------------------------------------
+3×3             0.0055          9
+```
+
+</details>
+
+<details>
+<summary>모드 2: data.json 일괄 분석 실행 예시</summary>
+
+```text
+=== Mini NPU Simulator ===
+
+[모드 선택]
+1. 사용자 입력 (3x3)
+2. data.json 분석
+선택: 2
+
+#---------------------------------------
+# [1] 필터 로드
+#---------------------------------------
+✓ size_5 필터 로드 완료 (Cross, X)
+✓ size_13 필터 로드 완료 (Cross, X)
+✓ size_25 필터 로드 완료 (Cross, X)
+
+#---------------------------------------
+# [2] 패턴 분석 (라벨 정규화 적용)
+#---------------------------------------
+--- size_5_1 ---
+Cross 점수: 0.9
+X 점수: 0.8999999999999999
+판정: UNDECIDED | expected: X | FAIL (동점 규칙)
+--- size_5_2 ---
+Cross 점수: 8.9
+X 점수: 0.1
+판정: Cross | expected: Cross | PASS
+--- size_13_1 ---
+Cross 점수: 0.3
+X 점수: 14.700000000000008
+판정: X | expected: X | PASS
+--- size_13_2 ---
+Cross 점수: 7.499999999999997
+X 점수: 7.5
+판정: UNDECIDED | expected: Cross | FAIL (동점 규칙)
+--- size_25_1 ---
+Cross 점수: 4.9
+X 점수: 4.899999999999999
+판정: UNDECIDED | expected: X | FAIL (동점 규칙)
+--- size_25_2 ---
+Cross 점수: 52.9
+X 점수: 0.1
+판정: Cross | expected: Cross | PASS
+
+#---------------------------------------
+# [3] 성능 분석 (평균/10회)
+#---------------------------------------
+크기           평균 시간(ms)     연산 횟수
+-------------------------------------
+3×3             0.0062          9
+5×5             0.0119         25
+13×13           0.1038        169
+25×25           0.2752        625
+
+#---------------------------------------
+# [4] 결과 요약
+#---------------------------------------
+총 테스트: 6개
+통과: 3개
+실패: 3개
+
+실패 케이스:
+- size_5_1: 동점(UNDECIDED) 처리 규칙에 따라 FAIL (|Cross-X| < 1e-09)
+- size_13_2: 동점(UNDECIDED) 처리 규칙에 따라 FAIL (|Cross-X| < 1e-09)
+- size_25_1: 동점(UNDECIDED) 처리 규칙에 따라 FAIL (|Cross-X| < 1e-09)
+```
+
+</details>
+
 ---
 
 ## 2. 시스템 아키텍처 (Architecture & Structure)
@@ -47,30 +174,52 @@ python main.py
 ```mermaid
 flowchart TD
     subgraph CLI["🖥️ 대화형 콘솔 계층 (Console CLI)"]
-        MENU["메인 메뉴 및 안전 종료 (main, select_mode)\n1. 사용자 입력 (3x3) | 2. data.json 분석\nCtrl+C / EOFError 안전 종료"]
-        INPUT["방어적 콘솔 입력 모듈\nparse_matrix_row / read_square_matrix\n행·열 수, 숫자 파싱, NaN/inf 차단 및 재입력"]
+        MENU["메인 메뉴 및 안전 종료 (main, select_mode)
+1. 사용자 입력 (3x3) | 2. data.json 분석
+Ctrl+C / EOFError 안전 종료"]
+        INPUT["방어적 콘솔 입력 모듈
+parse_matrix_row / read_square_matrix
+행·열 수, 숫자 파싱, NaN/inf 차단 및 재입력"]
         MENU --> INPUT
     end
 
     subgraph CTRL["⚙️ 모드 컨트롤러 계층 (Mode Controllers)"]
-        M1["모드 1 컨트롤러\nrun_user_input_mode\n필터 A/B 저장 확인 → 패턴 입력 → 판정"]
-        M2["모드 2 컨트롤러\nrun_json_analysis_mode\n일괄 로드 → 케이스 격리 평가 → 결과 요약"]
+        M1["모드 1 컨트롤러
+run_user_input_mode
+필터 A/B 저장 확인 → 패턴 입력 → 판정"]
+        M2["모드 2 컨트롤러
+run_json_analysis_mode
+일괄 로드 → 케이스 격리 평가 → 결과 요약"]
     end
 
     subgraph CORE["🧮 핵심 MAC & 벤치마크 엔진 계층 (Core Engine)"]
-        VALID["정방 행렬 검증\nis_valid_square_matrix\nN×N 크기, bool/NaN/inf 차단"]
-        MAC["순수 반복문 MAC 연산\ncompute_mac\n이중 for문 누적 곱셈 합산"]
-        JUDGE["허용오차 판정 정책\njudge_scores\nabs(a - b) < 1e-9 동점 처리"]
-        BENCH["I/O 제외 성능 측정 모듈\nbenchmark_mac / measure_sizes\nprint_performance_table"]
+        VALID["정방 행렬 검증
+is_valid_square_matrix
+N×N 크기, bool/NaN/inf 차단"]
+        MAC["순수 반복문 MAC 연산
+compute_mac
+이중 for문 누적 곱셈 합산"]
+        JUDGE["허용오차 판정 정책
+judge_scores
+abs(a - b) < 1e-9 동점 처리"]
+        BENCH["I/O 제외 성능 측정 모듈
+benchmark_mac / measure_sizes
+print_performance_table"]
         VALID --> MAC
         MAC --> JUDGE
         MAC --> BENCH
     end
 
     subgraph DATA["📦 데이터 검증·정규화 & 스토리지 계층 (Data Layer)"]
-        NORM["라벨 정규화 & 키 파싱\nnormalize_label ('+' / 'cross' / 'x' → Cross / X)\nparse_size_key (size_N / size_N_idx)"]
-        LOADER["JSON 로드 & 케이스 격리\nload_json_data / load_normalized_filters\nevaluate_pattern_case (오류 시 개별 FAIL)"]
-        JSON[("📄 data.json (UTF-8)\nfilters: size_5, size_13, size_25\npatterns: size_5_1 ~ size_25_2")]
+        NORM["라벨 정규화 & 키 파싱
+normalize_label ('+' / 'cross' / 'x' → Cross / X)
+parse_size_key (size_N / size_N_idx)"]
+        LOADER["JSON 로드 & 케이스 격리
+load_json_data / load_normalized_filters
+evaluate_pattern_case (오류 시 개별 FAIL)"]
+        JSON[("📄 data.json (UTF-8)
+filters: size_5, size_13, size_25
+patterns: size_5_1 ~ size_25_2")]
         JSON --> LOADER
         LOADER --> NORM
     end
