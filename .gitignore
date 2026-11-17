@@ -4,3 +4,8 @@ __pycache__/
 .venv/
 venv/
 .DS_Store
+
+# 로컬 학습/과제 자료 (GitHub 업로드 제외)
+Skills/
+AI가 계산하는 방식을 흉내 내는 작은 계산기 만들기.pdf
+과제_학습_가이드.md

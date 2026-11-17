@@ -114,13 +114,13 @@ flowchart TD
 | 단계 | 진행 내용 | 검증 결과 | Git 커밋 |
 | :--- | :--- | :--- | :--- |
 | **STEP 0** | 프로젝트 초기 환경(`Python 3.14.7`) 확인, `.gitignore` 및 `data.json` 구성 | `data.json` 스키마(`meta`, `filters`, `patterns`) 확인 | `0948c1d` |
-| **STEP 1** | `main.py` 진입점, 모드 선택 메뉴(`select_mode`), `Ctrl+C`/`EOFError` 안전 종료 골격 구현 | 잘못된 메뉴 입력 재요구 및 `1`/`2`/중단 종료 정상 확인 | `98f4b62` |
-| **STEP 2** | `is_valid_square_matrix()`, 이중 반복문 `compute_mac()`, `EPSILON = 1e-9` 기반 `judge_scores()` 구현 | `5.0`/`1.0` 계산, `0.9` vs `0.8999999999999999` 동점 판정, 비정방/bool 행렬 차단 확인 | `5ca0b78` |
-| **STEP 3** | I/O를 분리한 `time.perf_counter()` 기반 `benchmark_mac()`(10회 평균), `measure_sizes()`, `print_performance_table()` 구현 | $3\times3, 5\times5, 13\times13, 25\times25$ 평균 시간(ms) 및 $N^2$ 연산 횟수 표 출력 확인 | `6bf216d` |
-| **STEP 4** | 모드 1 `parse_matrix_row()`, `read_square_matrix()`, `run_user_input_mode()` 구현 | PDF 예시 정상 입력, 오류 입력(`1 2`, `1 a 0`, 빈 줄, `nan`) 재유도, 동점 판정 모두 통과 | `78ba3b2` |
-| **STEP 5** | 모드 2 `normalize_label()`, `parse_size_key()`, `load_normalized_filters()`, `evaluate_pattern_case()`, `run_json_analysis_mode()` 구현 | `data.json` 6개 케이스 분석, 누락/오류 JSON 및 크기 불일치 케이스 개별 `FAIL` 격리 확인 | `6c36432` |
+| **STEP 1** | `main.py` 진입점, 모드 선택 메뉴(`select_mode`), `Ctrl+C`/`EOFError` 안전 종료 골격 구현 | 잘못된 메뉴 입력 재요구 및 `1`/`2`/중단 종료 정상 확인 | `8a00271` |
+| **STEP 2** | `is_valid_square_matrix()`, 이중 반복문 `compute_mac()`, `EPSILON = 1e-9` 기반 `judge_scores()` 구현 | `5.0`/`1.0` 계산, `0.9` vs `0.8999999999999999` 동점 판정, 비정방/bool 행렬 차단 확인 | `7586ac8` |
+| **STEP 3** | I/O를 분리한 `time.perf_counter()` 기반 `benchmark_mac()`(10회 평균), `measure_sizes()`, `print_performance_table()` 구현 | $3\times3, 5\times5, 13\times13, 25\times25$ 평균 시간(ms) 및 $N^2$ 연산 횟수 표 출력 확인 | `105819d` |
+| **STEP 4** | 모드 1 `parse_matrix_row()`, `read_square_matrix()`, `run_user_input_mode()` 구현 | PDF 예시 정상 입력, 오류 입력(`1 2`, `1 a 0`, 빈 줄, `nan`) 재유도, 동점 판정 모두 통과 | `3192ba4` |
+| **STEP 5** | 모드 2 `normalize_label()`, `parse_size_key()`, `load_normalized_filters()`, `evaluate_pattern_case()`, `run_json_analysis_mode()` 구현 | `data.json` 6개 케이스 분석, 누락/오류 JSON 및 크기 불일치 케이스 개별 `FAIL` 격리 확인 | `c5fcdfa` |
 | **STEP 6** | *(선택)* 보너스 과제 (1D 배열 최적화 비교, 패턴 생성기) | 필수 학습 목표 이해에 집중하기 위해 생략 | - |
-| **STEP 7** | 모드 1·2 전체 통합 테스트 및 `README.md` 아키텍처·체크리스트·리포트·과제 목표 정리 | 전체 재현성 및 예외 방어 최종 통과 | `74ade35` 이후 업데이트 |
+| **STEP 7** | 모드 1·2 전체 통합 테스트 및 `README.md` 아키텍처·체크리스트·리포트·과제 목표 정리 | 전체 재현성 및 예외 방어 최종 통과 | `465fc90`, `3ffe9c7` |
 
 ---
 
