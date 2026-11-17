@@ -141,9 +141,81 @@ def select_mode() -> str:
         print("입력 오류: 1 또는 2를 입력하세요.")
 
 
+def parse_matrix_row(line: str, expected_cols: int = 3) -> List[float]:
+    """공백으로 구분된 한 줄 문자열을 파싱해 길이 expected_cols의 유한 실수 리스트로 반환한다."""
+    tokens = line.strip().split()
+    if len(tokens) != expected_cols:
+        raise ValueError(
+            f"입력 형식 오류: 각 줄에 {expected_cols}개의 숫자를 공백으로 구분해 입력하세요."
+        )
+
+    row: List[float] = []
+    for token in tokens:
+        try:
+            value = float(token)
+        except ValueError as exc:
+            raise ValueError(
+                f"입력 형식 오류: 각 줄에 {expected_cols}개의 숫자를 공백으로 구분해 입력하세요."
+            ) from exc
+        if not math.isfinite(value):
+            raise ValueError(
+                f"입력 형식 오류: 각 줄에 {expected_cols}개의 숫자를 공백으로 구분해 입력하세요."
+            )
+        row.append(value)
+    return row
+
+
+def read_square_matrix(name: str, size: int = 3) -> List[List[float]]:
+    """콘솔에서 size줄의 공백 구분 숫자 입력을 받아 size×size 2차원 리스트로 반환한다."""
+    print(f"{name} ({size}줄 입력, 공백 구분)")
+    matrix: List[List[float]] = []
+    for row_idx in range(size):
+        while True:
+            raw_line = input()
+            try:
+                row = parse_matrix_row(raw_line, expected_cols=size)
+                matrix.append(row)
+                break
+            except ValueError as exc:
+                print(f"{exc} ({row_idx + 1}번째 줄 재입력)")
+    return matrix
+
+
 def run_user_input_mode() -> None:
-    """모드 1: 사용자 입력(3x3) 실행 자리 (STEP 4에서 구현 예정)."""
-    print("\n[안내] 모드 1(사용자 입력 3x3)이 선택되었습니다. (STEP 4에서 구현 예정)")
+    """모드 1: 사용자 입력(3x3) 필터 A, B와 패턴을 입력받아 MAC 연산·판정·성능을 출력한다."""
+    print("\n#---------------------------------------")
+    print("# [1] 필터 입력")
+    print("#---------------------------------------")
+    filter_a = read_square_matrix("필터 A", size=3)
+    print()
+    filter_b = read_square_matrix("필터 B", size=3)
+    print("\n✓ 필터 A, B (3×3) 저장 확인 완료")
+
+    print("\n#---------------------------------------")
+    print("# [2] 패턴 입력")
+    print("#---------------------------------------")
+    pattern = read_square_matrix("패턴", size=3)
+
+    score_a = compute_mac(pattern, filter_a)
+    score_b = compute_mac(pattern, filter_b)
+    avg_ms, op_count = benchmark_mac(pattern, filter_a, repeat=DEFAULT_BENCHMARK_REPEAT)
+    verdict = judge_scores(
+        score_a, score_b, label_a="A", label_b="B", tie_label="판정 불가"
+    )
+
+    print("\n#---------------------------------------")
+    print("# [3] MAC 결과")
+    print("#---------------------------------------")
+    print(f"A 점수: {score_a}")
+    print(f"B 점수: {score_b}")
+    print(f"연산 시간(평균/{DEFAULT_BENCHMARK_REPEAT}회): {avg_ms:.4f} ms")
+    if verdict == "판정 불가":
+        print("판정: 판정 불가 (|A-B| < 1e-9)")
+    else:
+        print(f"판정: {verdict}")
+
+    print()
+    print_performance_table([(3, avg_ms, op_count)], repeat=DEFAULT_BENCHMARK_REPEAT)
 
 
 def run_json_analysis_mode() -> None:
